@@ -33,11 +33,13 @@ export default function AppDashboard() {
     setNotification({ message, type, title });
   };
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
   // Fetch real-time status (tables & queue)
   const fetchStatus = useCallback(async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch('/api/status');
+      const res = await fetch(`${API_BASE_URL}/api/status`);
       if (!res.ok) throw new Error('Gagal mengambil status restoran');
       const data = await res.json();
       setTables(data.tables || []);
@@ -47,7 +49,7 @@ export default function AppDashboard() {
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   // Fetch history list
   const fetchHistory = useCallback(async () => {
@@ -62,7 +64,7 @@ export default function AppDashboard() {
         per_page: 10,
       });
 
-      const res = await fetch(`/api/history?${query.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/api/history?${query.toString()}`);
       if (!res.ok) throw new Error('Gagal mengambil riwayat dining');
       const data = await res.json();
       setHistoryData(data.data || []);
@@ -95,7 +97,7 @@ export default function AppDashboard() {
 
   // Handler: Customer Arrival (POST /api/arrive)
   const handleCustomerArrival = async (payload) => {
-    const res = await fetch('/api/arrive', {
+    const res = await fetch(`${API_BASE_URL}/api/arrive`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -121,7 +123,7 @@ export default function AppDashboard() {
   // Handler: Force Complete Table (POST /api/serve action=force)
   const handleForceComplete = async (tableId) => {
     try {
-      const res = await fetch('/api/serve', {
+      const res = await fetch(`${API_BASE_URL}/api/serve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +159,7 @@ export default function AppDashboard() {
     }
 
     try {
-      const res = await fetch('/api/serve', {
+      const res = await fetch(`${API_BASE_URL}/api/serve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +185,7 @@ export default function AppDashboard() {
   // Handler: Cancel Queue Item (DELETE /api/queue/{id})
   const handleCancelQueue = async (queueId) => {
     try {
-      const res = await fetch(`/api/queue/${queueId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/queue/${queueId}`, {
         method: 'DELETE',
         headers: {
           Accept: 'application/json',
