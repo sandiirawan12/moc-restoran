@@ -1,5 +1,11 @@
 {
   "version": 2,
   "outputDirectory": "dist",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://moc-restoran-production.up.railway.app/api/:path*"
+    }
+  ]
 }
