@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('waiting_queues', function (Blueprint $table) {
-            $table->id();
-            $table->string('customer_name');
-            $table->integer('party_size');
-            $table->enum('status', ['waiting', 'seated', 'cancelled'])->default('waiting');
-            $table->timestamp('arrived_at');
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('waiting_queues')) {
+            Schema::create('waiting_queues', function (Blueprint $table) {
+                $table->id();
+                $table->string('customer_name');
+                $table->integer('party_size');
+                $table->enum('status', ['waiting', 'seated', 'cancelled'])->default('waiting');
+                $table->timestamp('arrived_at');
+                $table->timestamps();
+            });
+        }
     }
 
     /**
