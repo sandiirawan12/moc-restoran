@@ -78,13 +78,13 @@ export default function AppDashboard() {
     }
   }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage, API_BASE_URL]);
 
-  // Initial load & 3s background polling (quiet, no spinner flickers)
+  // Initial load & 10-minute background polling
   useEffect(() => {
     fetchStatus(false);
 
     const interval = setInterval(() => {
       fetchStatus(false);
-    }, 3000);
+    }, 10 * 60 * 1000); // 10 menit (600.000 ms)
 
     return () => clearInterval(interval);
   }, [fetchStatus]);
