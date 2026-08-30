@@ -130,7 +130,7 @@ npx vitest run
 
 ---
 
-## 💡 Bagian 3 (Bonus) — Optimasi Revenue
+## 💡 Optimasi Revenue
 
 ### Permasalahan:
 Ketika party kecil (misal 2 orang) datang dan meja kecil (A: 2 orang) sedang terisi, namun meja besar (D: 8 orang) tersedia. Jika party 2 orang langsung ditempatkan di Meja D(8), restoran kehilangan 75% kapasitas meja D selama ~45 menit. Jika ada party 7-8 orang datang beberapa menit kemudian, mereka terpaksa menunggu lama atau pergi (*lost opportunity cost*).
