@@ -235,15 +235,21 @@ class RestaurantService
         ];
     }
 
+    protected static bool $redisDisabled = false;
+
     /**
      * Invalidate status cache in Redis
      */
     public function invalidateStatusCache(): void
     {
+        if (self::$redisDisabled) {
+            return;
+        }
+
         try {
             Cache::forget('restaurant:status');
         } catch (\Throwable $e) {
-            // Fallback jika Redis service offline
+            self::$redisDisabled = true;
         }
     }
 
@@ -252,30 +258,32 @@ class RestaurantService
      */
     public function getStatus(): array
     {
-        try {
-            $cached = Cache::get('restaurant:status');
-            if (is_array($cached) && !empty($cached['tables']) && isset($cached['queue']) && is_array($cached['queue'])) {
-                $now = Carbon::now();
-                $cached['server_time'] = $now->toIso8601String();
-                $cached['cached_in_redis'] = true;
+        if (! self::$redisDisabled) {
+            try {
+                $cached = Cache::get('restaurant:status');
+                if (is_array($cached) && ! empty($cached['tables']) && isset($cached['queue']) && is_array($cached['queue'])) {
+                    $now = Carbon::now();
+                    $cached['server_time'] = $now->toIso8601String();
+                    $cached['cached_in_redis'] = true;
 
-                return $cached;
+                    return $cached;
+                }
+            } catch (\Throwable $e) {
+                self::$redisDisabled = true;
             }
-        } catch (\Throwable $e) {
-            // Fallback jika Redis tidak dapat diakses
         }
 
         $result = $this->calculateStatus();
 
-        if (!empty($result['tables'])) {
+        if (! self::$redisDisabled && ! empty($result['tables'])) {
             try {
                 Cache::put('restaurant:status', $result, 5); // 5 detik TTL di Redis Cache
             } catch (\Throwable $e) {
-                // Fallback jika Redis tidak dapat diakses
+                self::$redisDisabled = true;
             }
         }
 
-        $result['cached_in_redis'] = false;
+        $result['cached_in_redis'] = ! self::$redisDisabled;
 
         return $result;
     }
@@ -309,10 +317,8 @@ class RestaurantService
             }
         }
 
-        $tables = RestaurantTable::orderBy('code')->get()->map(function ($t) use ($now) {
-            $activeSession = DiningSession::where('table_id', $t->id)
-                ->where('status', 'active')
-                ->first();
+        $tables = RestaurantTable::with('activeSession')->orderBy('code')->get()->map(function ($t) use ($now) {
+            $activeSession = $t->activeSession;
 
             $sessionData = null;
             if ($activeSession) {
