@@ -251,7 +251,7 @@ class RestaurantService
         try {
             if (Cache::has('restaurant:status')) {
                 $cached = Cache::get('restaurant:status');
-                if (is_array($cached) && !empty($cached['tables'])) {
+                if (is_array($cached) && !empty($cached['tables']) && isset($cached['queue']) && is_array($cached['queue'])) {
                     $now = Carbon::now();
                     $cached['server_time'] = $now->toIso8601String();
                     $cached['cached_in_redis'] = true;
