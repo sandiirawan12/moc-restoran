@@ -18,13 +18,14 @@ Sistem manajemen antrean restoran real-time dan dashboard interaktif berbasis **
 
 ## ✨ Fitur Utama
 
-### 🔷 Backend API (Laravel)
+### 🔷 Backend API (Laravel + Redis)
 - **4 Meja Standar**: Meja A (2 orang), Meja B (4 orang), Meja C (6 orang), Meja D (8 orang).
 - **Smart Table Matching**: Penempatan otomatis ke meja dengan kapasitas **paling mendekati** (`capacity >= party_size`) tanpa oversize.
 - **Waktu Makan Dinamis**: `(party_size × 15) + random(5 - 15)` menit.
 - **Priority Waiting Queue**: Antrean diprioritaskan untuk **party terbesar terlebih dahulu** (`party_size DESC`, `arrived_at ASC`).
 - **Automated Queue Auto-Seat**: Saat meja selesai dikosongkan, antrean teratas yang muat langsung otomatis menempati meja tersebut.
-- **Endpoints**: `POST /api/arrive`, `GET /api/status`, `POST /api/serve`, `GET /api/history`.
+- **Redis Real-Time Caching**: Dynamic response caching pada `GET /api/status` via Redis (`CACHE_STORE=redis`) dengan invalidasi otomatis (*instant cache purge*) saat ada perubahan state kedatangan, penataan meja, atau pembatalan antrean. Dilengkapi *graceful fallback* jika Redis offline.
+- **Endpoints**: `POST /api/arrive`, `GET /api/status`, `POST /api/serve`, `GET /api/history`, `DELETE /api/queue/{id}`.
 
 ### 🔶 Frontend Dashboard (React + Vite)
 1. **Denah Restoran Interaktif**: Grid layout visual 4 meja dengan status real-time.
@@ -44,9 +45,9 @@ Sistem manajemen antrean restoran real-time dan dashboard interaktif berbasis **
 
 ## 🛠️ Teknologi Stack
 
-- **Backend**: PHP 8.3+, Laravel 11/13, SQLite / MySQL / PostgreSQL, Redis supported.
+- **Backend**: PHP 8.3+, Laravel 11/13, MySQL / PostgreSQL / SQLite, **Redis** (`predis/predis`, `phpredis`).
 - **Frontend**: React 19, Vite, TailwindCSS v4, Lucide Icons, Glassmorphic UI.
-- **Testing**: PHPUnit (Backend - 8 test cases), Vitest + React Testing Library (Frontend - 6 test cases).
+- **Testing**: PHPUnit (Backend - 13 test cases), Vitest + React Testing Library (Frontend - 6 test cases).
 - **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`).
 
 ---

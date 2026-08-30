@@ -6,6 +6,7 @@ use App\Models\DiningSession;
 use App\Models\RestaurantTable;
 use App\Models\WaitingQueue;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class RestaurantService
 {
@@ -64,6 +65,8 @@ class RestaurantService
 
             $table->update(['status' => 'occupied']);
 
+            $this->invalidateStatusCache();
+
             return [
                 'status' => 'seated',
                 'message' => "Pelanggan {$customerName} (Party: {$partySize}) duduk di Meja {$table->code}.",
@@ -87,9 +90,11 @@ class RestaurantService
                 $query->where('party_size', '>', $partySize)
                     ->orWhere(function ($q) use ($partySize, $now) {
                         $q->where('party_size', '=', $partySize)
-                          ->where('arrived_at', '<', $now);
+                            ->where('arrived_at', '<', $now);
                     });
             })->count() + 1;
+
+        $this->invalidateStatusCache();
 
         return [
             'status' => 'queued',
@@ -108,7 +113,7 @@ class RestaurantService
             ->orderBy('arrived_at', 'asc')
             ->first();
 
-        if (!$nextInQueue) {
+        if (! $nextInQueue) {
             return null;
         }
 
@@ -186,6 +191,8 @@ class RestaurantService
             $queueItem->update(['status' => 'seated']);
             $table->update(['status' => 'occupied']);
 
+            $this->invalidateStatusCache();
+
             return [
                 'success' => true,
                 'message' => "Pelanggan {$queueItem->customer_name} berhasil di-assign ke Meja {$table->code}.",
@@ -210,6 +217,8 @@ class RestaurantService
         // Cek antrean berikutnya untuk langsung menduduki meja yang baru kosong
         $autoSession = $this->autoAssignNextInQueue($table);
 
+        $this->invalidateStatusCache();
+
         $msg = "Meja {$table->code} telah dikosongkan.";
         if ($autoSession) {
             $msg .= " Antrean selanjutnya ({$autoSession->customer_name}) langsung menduduki Meja {$table->code}.";
@@ -222,8 +231,55 @@ class RestaurantService
         ];
     }
 
-    // Status real-time 4 meja & list antrean
+    /**
+     * Invalidate status cache in Redis
+     */
+    public function invalidateStatusCache(): void
+    {
+        try {
+            Cache::forget('restaurant:status');
+        } catch (\Throwable $e) {
+            // Fallback jika Redis service offline
+        }
+    }
+
+    /**
+     * Status real-time 4 meja & list antrean dengan Redis caching & fallback
+     */
     public function getStatus(): array
+    {
+        try {
+            if (Cache::has('restaurant:status')) {
+                $cached = Cache::get('restaurant:status');
+                if (is_array($cached)) {
+                    $now = Carbon::now();
+                    $cached['server_time'] = $now->toIso8601String();
+                    $cached['cached_in_redis'] = true;
+
+                    return $cached;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback jika Redis tidak dapat diakses
+        }
+
+        $result = $this->calculateStatus();
+
+        try {
+            Cache::put('restaurant:status', $result, 5); // 5 detik TTL di Redis Cache
+        } catch (\Throwable $e) {
+            // Fallback jika Redis tidak dapat diakses
+        }
+
+        $result['cached_in_redis'] = false;
+
+        return $result;
+    }
+
+    /**
+     * Kalkulasi status meja dan antrean secara murni dari database
+     */
+    public function calculateStatus(): array
     {
         $now = Carbon::now();
 
@@ -334,15 +390,15 @@ class RestaurantService
         $query = DiningSession::with('table')
             ->whereIn('status', ['completed', 'force_completed']);
 
-        if (!empty($params['search'])) {
-            $query->where('customer_name', 'like', '%' . $params['search'] . '%');
+        if (! empty($params['search'])) {
+            $query->where('customer_name', 'like', '%'.$params['search'].'%');
         }
 
-        if (!empty($params['status']) && $params['status'] !== 'all') {
+        if (! empty($params['status']) && $params['status'] !== 'all') {
             $query->where('status', $params['status']);
         }
 
-        if (!empty($params['party_size']) && is_numeric($params['party_size'])) {
+        if (! empty($params['party_size']) && is_numeric($params['party_size'])) {
             $query->where('party_size', (int) $params['party_size']);
         }
 
@@ -374,6 +430,8 @@ class RestaurantService
         $partySize = $queueItem->party_size;
 
         $queueItem->update(['status' => 'cancelled']);
+
+        $this->invalidateStatusCache();
 
         return [
             'success' => true,

@@ -5,13 +5,14 @@ namespace Tests\Feature;
 use App\Models\DiningSession;
 use App\Models\RestaurantTable;
 use App\Models\WaitingQueue;
+use App\Services\RestaurantService;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class RestaurantQueueTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -362,7 +363,7 @@ class RestaurantQueueTest extends TestCase
         ]);
 
         // Call status/auto-assign check
-        $service = app(\App\Services\RestaurantService::class);
+        $service = app(RestaurantService::class);
         $session = $service->autoAssignNextInQueue($tableD);
 
         $this->assertNotNull($session);
@@ -373,5 +374,27 @@ class RestaurantQueueTest extends TestCase
             'id' => $waitingAngel->id,
             'status' => 'seated',
         ]);
+    }
+
+    /** Test 13: Redis status caching and invalidation */
+    public function test_redis_caching_and_invalidation(): void
+    {
+        // First request populates status
+        $response1 = $this->getJson('/api/status');
+        $response1->assertStatus(200);
+
+        // New customer arrives -> invalidates status cache
+        $this->postJson('/api/arrive', [
+            'customer_name' => 'Cache Test Customer',
+            'party_size' => 4,
+        ]);
+
+        $response2 = $this->getJson('/api/status');
+        $response2->assertStatus(200);
+
+        // Queue item in response should contain Cache Test Customer
+        $tables = $response2->json('tables');
+        $tableB = collect($tables)->firstWhere('code', 'B');
+        $this->assertEquals('Cache Test Customer', $tableB['active_session']['customer_name']);
     }
 }
