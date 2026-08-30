@@ -248,6 +248,7 @@ class RestaurantService
 
         try {
             Cache::forget('restaurant:status');
+            Cache::increment('restaurant:history_version');
         } catch (\Throwable $e) {
             self::$redisDisabled = true;
         }
@@ -256,8 +257,12 @@ class RestaurantService
     /**
      * Status real-time 4 meja & list antrean dengan Redis caching & fallback
      */
-    public function getStatus(): array
+    public function getStatus(bool $refresh = false): array
     {
+        if ($refresh) {
+            $this->invalidateStatusCache();
+        }
+
         if (! self::$redisDisabled) {
             try {
                 $cached = Cache::get('restaurant:status');
@@ -277,7 +282,8 @@ class RestaurantService
 
         if (! self::$redisDisabled && ! empty($result['tables'])) {
             try {
-                Cache::put('restaurant:status', $result, 5); // 5 detik TTL di Redis Cache
+                // Simpan di Redis (1 jam TTL), pembacaan berikutnya diambil dari Redis sampai refresh/action!
+                Cache::put('restaurant:status', $result, 3600);
             } catch (\Throwable $e) {
                 self::$redisDisabled = true;
             }
@@ -398,8 +404,36 @@ class RestaurantService
     }
 
     // Riwayat makan dengan search, filter, dan sort
-    public function getHistory(array $params = []): array
+    public function getHistory(array $params = [], bool $refresh = false): array
     {
+        if ($refresh) {
+            $this->invalidateStatusCache();
+        }
+
+        $version = 1;
+        if (! self::$redisDisabled) {
+            try {
+                $version = (int) Cache::get('restaurant:history_version', 1);
+            } catch (\Throwable $e) {
+                self::$redisDisabled = true;
+            }
+        }
+
+        $cacheKey = 'restaurant:history:v' . $version . ':' . md5(json_encode($params));
+
+        if (! self::$redisDisabled) {
+            try {
+                $cachedHistory = Cache::get($cacheKey);
+                if (is_array($cachedHistory) && isset($cachedHistory['data']) && is_array($cachedHistory['data'])) {
+                    $cachedHistory['cached_in_redis'] = true;
+
+                    return $cachedHistory;
+                }
+            } catch (\Throwable $e) {
+                self::$redisDisabled = true;
+            }
+        }
+
         $query = DiningSession::with('table')
             ->whereIn('status', ['completed', 'force_completed']);
 
@@ -432,12 +466,23 @@ class RestaurantService
 
         $history = $query->paginate($params['per_page'] ?? 20);
 
-        return [
+        $result = [
             'data' => $history->items(),
             'current_page' => $history->currentPage(),
             'last_page' => $history->lastPage(),
             'total' => $history->total(),
+            'cached_in_redis' => ! self::$redisDisabled,
         ];
+
+        if (! self::$redisDisabled) {
+            try {
+                Cache::put($cacheKey, $result, 3600);
+            } catch (\Throwable $e) {
+                self::$redisDisabled = true;
+            }
+        }
+
+        return $result;
     }
 
     // Pembatalan antrean jika pelanggan tidak jadi makan / meninggalkan antrean

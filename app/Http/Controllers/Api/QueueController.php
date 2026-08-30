@@ -50,9 +50,10 @@ class QueueController extends Controller
      * GET /api/status
      * Mengambil status real-time 4 meja (terisi/kosong/sisa waktu) dan daftar antrean prioritas.
      */
-    public function status(): JsonResponse
+    public function status(Request $request): JsonResponse
     {
-        $status = $this->restaurantService->getStatus();
+        $refresh = $request->boolean('refresh') || $request->has('refresh');
+        $status = $this->restaurantService->getStatus($refresh);
         return response()->json($status);
     }
 
@@ -85,7 +86,8 @@ class QueueController extends Controller
     public function history(Request $request): JsonResponse
     {
         $params = $request->only(['search', 'status', 'party_size', 'sort_by', 'sort_dir', 'page', 'per_page']);
-        $history = $this->restaurantService->getHistory($params);
+        $refresh = $request->boolean('refresh') || $request->has('refresh');
+        $history = $this->restaurantService->getHistory($params, $refresh);
         return response()->json($history);
     }
 

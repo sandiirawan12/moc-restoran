@@ -44,10 +44,11 @@ export default function AppDashboard() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
   // Fetch real-time status (tables & queue)
-  const fetchStatus = useCallback(async (isManual = false) => {
+  const fetchStatus = useCallback(async (isManual = false, forceRefresh = false) => {
     try {
       if (isManual) setIsRefreshing(true);
-      const res = await fetch(`${API_BASE_URL}/api/status`);
+      const url = `${API_BASE_URL}/api/status${forceRefresh ? '?refresh=1' : ''}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Gagal mengambil status restoran');
       const data = await res.json();
       if (Array.isArray(data.tables) && data.tables.length > 0) {
@@ -64,7 +65,7 @@ export default function AppDashboard() {
   }, [API_BASE_URL]);
 
   // Fetch history list
-  const fetchHistory = useCallback(async (isCancelled = () => false) => {
+  const fetchHistory = useCallback(async (isCancelled = () => false, forceRefresh = false) => {
     try {
       if (!isCancelled()) setIsHistoryLoading(true);
       const query = new URLSearchParams({
@@ -76,6 +77,10 @@ export default function AppDashboard() {
         page: historyPage,
         per_page: 10,
       });
+
+      if (forceRefresh) {
+        query.append('refresh', '1');
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/history?${query.toString()}`);
       if (!res.ok) throw new Error('Gagal mengambil riwayat dining');
@@ -238,7 +243,7 @@ export default function AppDashboard() {
         onOpenArrivalModal={() => setIsArrivalModalOpen(true)}
         onOpenRevenueModal={() => setIsRevenueModalOpen(true)}
         onRefresh={() => {
-          Promise.all([fetchStatus(true), fetchHistory()]);
+          Promise.all([fetchStatus(true, true), fetchHistory(() => false, true)]);
         }}
         isRefreshing={isRefreshing}
       />
@@ -253,7 +258,7 @@ export default function AppDashboard() {
               onForceComplete={handleForceComplete}
               onDropQueueCustomer={handleDropQueueCustomer}
               onRefresh={() => {
-                Promise.all([fetchStatus(true), fetchHistory()]);
+                Promise.all([fetchStatus(true, true), fetchHistory(() => false, true)]);
               }}
             />
           </div>
