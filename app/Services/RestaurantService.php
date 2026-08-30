@@ -251,7 +251,7 @@ class RestaurantService
         try {
             if (Cache::has('restaurant:status')) {
                 $cached = Cache::get('restaurant:status');
-                if (is_array($cached)) {
+                if (is_array($cached) && !empty($cached['tables'])) {
                     $now = Carbon::now();
                     $cached['server_time'] = $now->toIso8601String();
                     $cached['cached_in_redis'] = true;
@@ -265,10 +265,12 @@ class RestaurantService
 
         $result = $this->calculateStatus();
 
-        try {
-            Cache::put('restaurant:status', $result, 5); // 5 detik TTL di Redis Cache
-        } catch (\Throwable $e) {
-            // Fallback jika Redis tidak dapat diakses
+        if (!empty($result['tables'])) {
+            try {
+                Cache::put('restaurant:status', $result, 5); // 5 detik TTL di Redis Cache
+            } catch (\Throwable $e) {
+                // Fallback jika Redis tidak dapat diakses
+            }
         }
 
         $result['cached_in_redis'] = false;

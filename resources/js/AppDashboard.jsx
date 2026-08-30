@@ -42,8 +42,12 @@ export default function AppDashboard() {
       const res = await fetch(`${API_BASE_URL}/api/status`);
       if (!res.ok) throw new Error('Gagal mengambil status restoran');
       const data = await res.json();
-      setTables(Array.isArray(data.tables) ? data.tables : []);
-      setQueue(Array.isArray(data.queue) ? data.queue : []);
+      if (Array.isArray(data.tables) && data.tables.length > 0) {
+        setTables(data.tables);
+      }
+      if (Array.isArray(data.queue)) {
+        setQueue(data.queue);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -78,13 +82,13 @@ export default function AppDashboard() {
     }
   }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage, API_BASE_URL]);
 
-  // Real-time status polling (1 detik via Redis Cache)
+  // Real-time status polling (3 detik via Redis Cache)
   useEffect(() => {
     fetchStatus(false);
 
     const statusInterval = setInterval(() => {
       fetchStatus(false);
-    }, 1000); // 1 detik (menggunakan Redis cache)
+    }, 3000); // 3 detik polling stabil
 
     return () => clearInterval(statusInterval);
   }, [fetchStatus]);
