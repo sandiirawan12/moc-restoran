@@ -14,6 +14,7 @@ export default function HistoryTable({
   partyFilter = '',
   sortBy = 'completed_at',
   sortDir = 'desc',
+  isLoading = false,
 }) {
   const handleHeaderClick = (columnKey) => {
     if (sortBy === columnKey) {
@@ -37,7 +38,13 @@ export default function HistoryTable({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6">
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 relative">
+      {/* Loading Overlay Bar */}
+      {isLoading && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500/20 overflow-hidden rounded-t-2xl">
+          <div className="h-full bg-blue-600 animate-pulse w-full"></div>
+        </div>
+      )}
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>

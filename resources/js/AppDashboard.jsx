@@ -28,6 +28,7 @@ export default function AppDashboard() {
   const [sortBy, setSortBy] = useState('completed_at');
   const [sortDir, setSortDir] = useState('desc');
   const [historyPage, setHistoryPage] = useState(1);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   // Modals state
   const [isArrivalModalOpen, setIsArrivalModalOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function AppDashboard() {
   // Fetch history list
   const fetchHistory = useCallback(async (isCancelled = () => false) => {
     try {
+      if (!isCancelled()) setIsHistoryLoading(true);
       const query = new URLSearchParams({
         search: searchValue,
         status: statusFilter,
@@ -89,6 +91,10 @@ export default function AppDashboard() {
     } catch (err) {
       if (!isCancelled()) {
         console.error(err);
+      }
+    } finally {
+      if (!isCancelled()) {
+        setIsHistoryLoading(false);
       }
     }
   }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage, API_BASE_URL]);
@@ -141,7 +147,7 @@ export default function AppDashboard() {
       showNotification(data.message, 'warning', 'Masuk Antrean Prioritas');
     }
 
-    fetchStatus();
+    await Promise.all([fetchStatus(), fetchHistory()]);
   };
 
   // Handler: Force Complete Table (POST /api/serve action=force)
@@ -160,8 +166,7 @@ export default function AppDashboard() {
       if (!res.ok) throw new Error(data.message || 'Gagal mengosongkan meja');
 
       showNotification(data.message, 'success', 'Meja Dikosongkan');
-      fetchStatus();
-      fetchHistory();
+      await Promise.all([fetchStatus(), fetchHistory()]);
     } catch (err) {
       showNotification(err.message, 'error', 'Terjadi Kesalahan');
     }
@@ -200,7 +205,7 @@ export default function AppDashboard() {
       if (!res.ok) throw new Error(data.message || 'Gagal menempatkan antrean ke meja');
 
       showNotification(data.message, 'success', 'Penempatan Berhasil');
-      fetchStatus();
+      await Promise.all([fetchStatus(), fetchHistory()]);
     } catch (err) {
       showNotification(err.message, 'error', 'Terjadi Kesalahan');
     }
@@ -220,7 +225,7 @@ export default function AppDashboard() {
       if (!res.ok) throw new Error(data.message || 'Gagal membatalkan antrean');
 
       showNotification(data.message, 'success', 'Antrean Dibatalkan');
-      fetchStatus();
+      await Promise.all([fetchStatus(), fetchHistory()]);
     } catch (err) {
       showNotification(err.message, 'error', 'Terjadi Kesalahan');
     }
@@ -233,8 +238,7 @@ export default function AppDashboard() {
         onOpenArrivalModal={() => setIsArrivalModalOpen(true)}
         onOpenRevenueModal={() => setIsRevenueModalOpen(true)}
         onRefresh={() => {
-          fetchStatus(true);
-          fetchHistory();
+          Promise.all([fetchStatus(true), fetchHistory()]);
         }}
         isRefreshing={isRefreshing}
       />
@@ -249,8 +253,7 @@ export default function AppDashboard() {
               onForceComplete={handleForceComplete}
               onDropQueueCustomer={handleDropQueueCustomer}
               onRefresh={() => {
-                fetchStatus(true);
-                fetchHistory();
+                Promise.all([fetchStatus(true), fetchHistory()]);
               }}
             />
           </div>
@@ -274,6 +277,7 @@ export default function AppDashboard() {
             partyFilter={partyFilter}
             sortBy={sortBy}
             sortDir={sortDir}
+            isLoading={isHistoryLoading}
             onSearchChange={(val) => {
               setSearchValue(val);
               setHistoryPage(1);
