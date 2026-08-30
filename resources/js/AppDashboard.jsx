@@ -78,20 +78,26 @@ export default function AppDashboard() {
     }
   }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage, API_BASE_URL]);
 
-  // Initial load & 10-minute background polling
+  // Real-time status polling (1 detik via Redis Cache)
   useEffect(() => {
     fetchStatus(false);
 
-    const interval = setInterval(() => {
+    const statusInterval = setInterval(() => {
       fetchStatus(false);
-    }, 10 * 60 * 1000); // 10 menit (600.000 ms)
+    }, 1000); // 1 detik (menggunakan Redis cache)
 
-    return () => clearInterval(interval);
+    return () => clearInterval(statusInterval);
   }, [fetchStatus]);
 
-  // Re-fetch history whenever search/filter/sort changes
+  // History table auto-refresh (10 menit) & re-fetch saat filter berubah
   useEffect(() => {
     fetchHistory();
+
+    const historyInterval = setInterval(() => {
+      fetchHistory();
+    }, 10 * 60 * 1000); // 10 menit (600.000 ms)
+
+    return () => clearInterval(historyInterval);
   }, [fetchHistory]);
 
   // Handler: Customer Arrival (POST /api/arrive)
