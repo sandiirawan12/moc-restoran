@@ -1,4 +1,4 @@
-# 🍽️ MOC Restoran — Monolith Queue & Dining Management System
+# MOC Restoran — Monolith & Dining Management System
 
 Sistem manajemen antrean restoran real-time dan dashboard interaktif berbasis **Laravel Monolith + React (Vite)**, dilengkapi dengan algoritma prioritas party terbesar, automated table matching, live countdown timer, drag-and-drop table assignment, multi-column sorting, CI/CD pipeline, dan analisis strategi optimasi revenue.
 
