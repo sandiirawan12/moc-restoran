@@ -206,8 +206,12 @@ class RestaurantService
             ->first();
 
         if ($activeSession) {
+            $completedAt = Carbon::now();
+            $actualDuration = max(1, (int) round($activeSession->seated_at->diffInSeconds($completedAt) / 60));
+
             $activeSession->update([
-                'completed_at' => Carbon::now(),
+                'completed_at' => $completedAt,
+                'duration_minutes' => $actualDuration,
                 'status' => $action === 'force' ? 'force_completed' : 'completed',
             ]);
         }
@@ -292,8 +296,11 @@ class RestaurantService
             ->get();
 
         foreach ($expiredSessions as $expired) {
+            $actualDuration = max(1, (int) round($expired->seated_at->diffInSeconds($now) / 60));
+
             $expired->update([
                 'completed_at' => $now,
+                'duration_minutes' => $actualDuration,
                 'status' => 'completed',
             ]);
 
@@ -389,6 +396,19 @@ class RestaurantService
     // Riwayat makan dengan search, filter, dan sort
     public function getHistory(array $params = []): array
     {
+        // Pastikan durasi aktual tercatat untuk semua data yang sudah selesai
+        DiningSession::whereIn('status', ['completed', 'force_completed'])
+            ->whereNotNull('completed_at')
+            ->get()
+            ->each(function ($session) {
+                if ($session->seated_at && $session->completed_at) {
+                    $actual = max(1, (int) round($session->seated_at->diffInSeconds($session->completed_at) / 60));
+                    if ($session->duration_minutes !== $actual) {
+                        $session->update(['duration_minutes' => $actual]);
+                    }
+                }
+            });
+
         $query = DiningSession::with('table')
             ->whereIn('status', ['completed', 'force_completed']);
 
