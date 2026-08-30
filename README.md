@@ -10,7 +10,7 @@ Sistem manajemen antrean restoran real-time dan dashboard interaktif berbasis **
 3. [Panduan Instalasi & Cara Menjalankan](#-panduan-instalasi--cara-menjalankan)
 4. [Dokumentasi API Endpoint](#-dokumentasi-api-endpoint)
 5. [Pengujian & Unit Testing](#-pengujian--unit-testing)
-6. [Bagian 3 (Bonus) — Optimasi Revenue](#-bagian-3-bonus--optimasi-revenue)
+6. [Optimasi Revenue](#-bagian-3-bonus--optimasi-revenue)
 7. [Struktur Folder Repositori](#-struktur-folder-repositori)
 8. [Asumsi & Tantangan Implementasi](#-asumsi--tantangan-implementasi)
 
