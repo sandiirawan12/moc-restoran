@@ -83,9 +83,9 @@ describe('Frontend Dashboard Unit Tests', () => {
   });
 
   // Test 5: History table column header sort toggle
-  test('history table column header clicks trigger sort callback', () => {
+  test('history table column header clicks trigger sort callback with correct initial and toggle directions', () => {
     const mockSortChange = vi.fn();
-    render(
+    const { rerender } = render(
       <HistoryTable
         historyData={[]}
         pagination={{}}
@@ -95,10 +95,28 @@ describe('Frontend Dashboard Unit Tests', () => {
       />
     );
 
-    const nameHeader = screen.getByText('Nama Pelanggan');
+    // Initial click on customer_name should default to 'asc' for text column
+    const nameHeader = screen.getByTestId('history-sort-customer_name');
     fireEvent.click(nameHeader);
+    expect(mockSortChange).toHaveBeenCalledWith('customer_name', 'asc');
 
+    // If currently sorted by customer_name (asc), clicking it again toggles to 'desc'
+    rerender(
+      <HistoryTable
+        historyData={[]}
+        pagination={{}}
+        sortBy="customer_name"
+        sortDir="asc"
+        onSortChange={mockSortChange}
+      />
+    );
+    fireEvent.click(nameHeader);
     expect(mockSortChange).toHaveBeenCalledWith('customer_name', 'desc');
+
+    // Click on Meja header (table_id)
+    const tableHeader = screen.getByTestId('history-sort-table_id');
+    fireEvent.click(tableHeader);
+    expect(mockSortChange).toHaveBeenCalledWith('table_id', 'asc');
   });
 
   // Test 6: Search & Status Filter triggers callbacks

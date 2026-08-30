@@ -7,8 +7,15 @@ import ArrivalModal from './components/ArrivalModal';
 import RevenueModal from './components/RevenueModal';
 import NotificationModal from './components/NotificationModal';
 
+const DEFAULT_TABLES = [
+  { id: 1, code: 'A', capacity: 2, status: 'available' },
+  { id: 2, code: 'B', capacity: 4, status: 'available' },
+  { id: 3, code: 'C', capacity: 6, status: 'available' },
+  { id: 4, code: 'D', capacity: 8, status: 'available' },
+];
+
 export default function AppDashboard() {
-  const [tables, setTables] = useState([]);
+  const [tables, setTables] = useState(DEFAULT_TABLES);
   const [queue, setQueue] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -56,7 +63,7 @@ export default function AppDashboard() {
   }, [API_BASE_URL]);
 
   // Fetch history list
-  const fetchHistory = useCallback(async () => {
+  const fetchHistory = useCallback(async (isCancelled = () => false) => {
     try {
       const query = new URLSearchParams({
         search: searchValue,
@@ -71,14 +78,18 @@ export default function AppDashboard() {
       const res = await fetch(`${API_BASE_URL}/api/history?${query.toString()}`);
       if (!res.ok) throw new Error('Gagal mengambil riwayat dining');
       const data = await res.json();
-      setHistoryData(data.data || []);
-      setHistoryPagination({
-        current_page: data.current_page,
-        last_page: data.last_page,
-        total: data.total,
-      });
+      if (!isCancelled()) {
+        setHistoryData(data.data || []);
+        setHistoryPagination({
+          current_page: data.current_page,
+          last_page: data.last_page,
+          total: data.total,
+        });
+      }
     } catch (err) {
-      console.error(err);
+      if (!isCancelled()) {
+        console.error(err);
+      }
     }
   }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage, API_BASE_URL]);
 
@@ -95,13 +106,17 @@ export default function AppDashboard() {
 
   // History table auto-refresh (10 menit) & re-fetch saat filter berubah
   useEffect(() => {
-    fetchHistory();
+    let cancelled = false;
+    fetchHistory(() => cancelled);
 
     const historyInterval = setInterval(() => {
-      fetchHistory();
+      fetchHistory(() => cancelled);
     }, 10 * 60 * 1000); // 10 menit (600.000 ms)
 
-    return () => clearInterval(historyInterval);
+    return () => {
+      cancelled = true;
+      clearInterval(historyInterval);
+    };
   }, [fetchHistory]);
 
   // Handler: Customer Arrival (POST /api/arrive)
@@ -259,12 +274,22 @@ export default function AppDashboard() {
             partyFilter={partyFilter}
             sortBy={sortBy}
             sortDir={sortDir}
-            onSearchChange={setSearchValue}
-            onStatusFilterChange={setStatusFilter}
-            onPartyFilterChange={setPartyFilter}
+            onSearchChange={(val) => {
+              setSearchValue(val);
+              setHistoryPage(1);
+            }}
+            onStatusFilterChange={(val) => {
+              setStatusFilter(val);
+              setHistoryPage(1);
+            }}
+            onPartyFilterChange={(val) => {
+              setPartyFilter(val);
+              setHistoryPage(1);
+            }}
             onSortChange={(col, dir) => {
               setSortBy(col);
               setSortDir(dir);
+              setHistoryPage(1);
             }}
             onPageChange={setHistoryPage}
           />

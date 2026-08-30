@@ -19,7 +19,9 @@ export default function HistoryTable({
     if (sortBy === columnKey) {
       onSortChange(columnKey, sortDir === 'asc' ? 'desc' : 'asc');
     } else {
-      onSortChange(columnKey, 'desc');
+      const defaultAscCols = ['customer_name', 'table_id', 'status'];
+      const initialDir = defaultAscCols.includes(columnKey) ? 'asc' : 'desc';
+      onSortChange(columnKey, initialDir);
     }
   };
 
@@ -94,7 +96,8 @@ export default function HistoryTable({
             <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-extrabold uppercase tracking-wider">
               <th
                 onClick={() => handleHeaderClick('customer_name')}
-                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group"
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-customer_name"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Nama Pelanggan</span>
@@ -103,17 +106,28 @@ export default function HistoryTable({
               </th>
               <th
                 onClick={() => handleHeaderClick('party_size')}
-                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group"
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-party_size"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Party Size</span>
                   {renderSortIcon('party_size')}
                 </div>
               </th>
-              <th className="py-3 px-4">Meja</th>
+              <th
+                onClick={() => handleHeaderClick('table_id')}
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-table_id"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Meja</span>
+                  {renderSortIcon('table_id')}
+                </div>
+              </th>
               <th
                 onClick={() => handleHeaderClick('seated_at')}
-                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group"
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-seated_at"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Waktu Seated</span>
@@ -122,7 +136,8 @@ export default function HistoryTable({
               </th>
               <th
                 onClick={() => handleHeaderClick('completed_at')}
-                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group"
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-completed_at"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Waktu Selesai</span>
@@ -131,14 +146,24 @@ export default function HistoryTable({
               </th>
               <th
                 onClick={() => handleHeaderClick('duration_minutes')}
-                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group"
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-duration_minutes"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Durasi</span>
                   {renderSortIcon('duration_minutes')}
                 </div>
               </th>
-              <th className="py-3 px-4">Status</th>
+              <th
+                onClick={() => handleHeaderClick('status')}
+                className="py-3 px-4 cursor-pointer hover:text-slate-900 transition group select-none"
+                data-testid="history-sort-status"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Status</span>
+                  {renderSortIcon('status')}
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 text-xs">

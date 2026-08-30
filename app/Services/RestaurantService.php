@@ -253,15 +253,13 @@ class RestaurantService
     public function getStatus(): array
     {
         try {
-            if (Cache::has('restaurant:status')) {
-                $cached = Cache::get('restaurant:status');
-                if (is_array($cached) && !empty($cached['tables']) && isset($cached['queue']) && is_array($cached['queue'])) {
-                    $now = Carbon::now();
-                    $cached['server_time'] = $now->toIso8601String();
-                    $cached['cached_in_redis'] = true;
+            $cached = Cache::get('restaurant:status');
+            if (is_array($cached) && !empty($cached['tables']) && isset($cached['queue']) && is_array($cached['queue'])) {
+                $now = Carbon::now();
+                $cached['server_time'] = $now->toIso8601String();
+                $cached['cached_in_redis'] = true;
 
-                    return $cached;
-                }
+                return $cached;
             }
         } catch (\Throwable $e) {
             // Fallback jika Redis tidak dapat diakses
@@ -412,8 +410,9 @@ class RestaurantService
         $query = DiningSession::with('table')
             ->whereIn('status', ['completed', 'force_completed']);
 
-        if (! empty($params['search'])) {
-            $query->where('customer_name', 'like', '%'.$params['search'].'%');
+        if (! empty($params['search']) && trim($params['search']) !== '') {
+            $searchTerm = trim($params['search']);
+            $query->where('customer_name', 'like', '%'.$searchTerm.'%');
         }
 
         if (! empty($params['status']) && $params['status'] !== 'all') {
@@ -427,11 +426,15 @@ class RestaurantService
         $sortBy = $params['sort_by'] ?? 'completed_at';
         $sortDir = strtolower($params['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
-        $allowedSorts = ['customer_name', 'party_size', 'seated_at', 'completed_at', 'duration_minutes'];
+        $allowedSorts = ['customer_name', 'party_size', 'table_id', 'seated_at', 'completed_at', 'duration_minutes', 'status'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir);
+            if ($sortBy !== 'completed_at') {
+                $query->orderBy('completed_at', 'desc');
+            }
+            $query->orderBy('id', 'desc');
         } else {
-            $query->orderBy('completed_at', 'desc');
+            $query->orderBy('completed_at', 'desc')->orderBy('id', 'desc');
         }
 
         $history = $query->paginate($params['per_page'] ?? 20);
