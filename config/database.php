@@ -155,14 +155,14 @@ return [
 
         'default' => [
             'url' => env('REDIS_URL'),
-            'scheme' => env('REDIS_SCHEME', str_starts_with(env('REDIS_URL', ''), 'rediss://') ? 'tls' : 'tcp'),
-            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'scheme' => env('REDIS_SCHEME', (str_starts_with(env('REDIS_URL', ''), 'rediss://') || str_starts_with(env('REDIS_HOST', ''), 'tls://')) ? 'tls' : 'tcp'),
+            'host' => preg_replace('/^tls:\/\//i', '', env('REDIS_HOST', '127.0.0.1')),
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
-            'timeout' => env('REDIS_TIMEOUT', 1.0),
-            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.0),
+            'timeout' => env('REDIS_TIMEOUT', 1.5),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.5),
             'max_retries' => env('REDIS_MAX_RETRIES', 1),
             'ssl' => [
                 'verify_peer' => false,
@@ -175,14 +175,14 @@ return [
 
         'cache' => [
             'url' => env('REDIS_URL'),
-            'scheme' => env('REDIS_SCHEME', str_starts_with(env('REDIS_URL', ''), 'rediss://') ? 'tls' : 'tcp'),
-            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'scheme' => env('REDIS_SCHEME', (str_starts_with(env('REDIS_URL', ''), 'rediss://') || str_starts_with(env('REDIS_HOST', ''), 'tls://')) ? 'tls' : 'tcp'),
+            'host' => preg_replace('/^tls:\/\//i', '', env('REDIS_HOST', '127.0.0.1')),
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '0'),
-            'timeout' => env('REDIS_TIMEOUT', 1.0),
-            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.0),
+            'timeout' => env('REDIS_TIMEOUT', 1.5),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.5),
             'max_retries' => env('REDIS_MAX_RETRIES', 1),
             'ssl' => [
                 'verify_peer' => false,
