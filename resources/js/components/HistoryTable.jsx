@@ -1,6 +1,24 @@
 import React from 'react';
 import { Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '-';
+  return (
+    d.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }) +
+    ', ' +
+    d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  );
+};
+
 export default function HistoryTable({
   historyData = [],
   pagination = {},
@@ -190,19 +208,11 @@ export default function HistoryTable({
                       Meja {row.table?.code || '-'}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-600">
-                    {new Date(row.seated_at).toLocaleTimeString('id-ID', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                  <td className="py-3.5 px-4 text-slate-600 font-medium">
+                    {formatDateTime(row.seated_at)}
                   </td>
-                  <td className="py-3.5 px-4 text-slate-600">
-                    {row.completed_at
-                      ? new Date(row.completed_at).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : '-'}
+                  <td className="py-3.5 px-4 text-slate-600 font-medium">
+                    {formatDateTime(row.completed_at)}
                   </td>
                   <td className="py-3.5 px-4 text-slate-800 font-mono font-bold">{row.duration_minutes} mnt</td>
                   <td className="py-3.5 px-4">
