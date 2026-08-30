@@ -49,7 +49,7 @@ function vercelPreparePlugin() {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     ${cssFile ? `<link rel="stylesheet" href="${cssFile}">` : ''}
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen selection:bg-blue-600 selection:text-white">
     <div id="app"></div>
     ${jsFile ? `<script type="module" src="${jsFile}"></script>` : ''}
 </body>

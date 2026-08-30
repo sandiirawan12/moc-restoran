@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 
 export function formatTime(seconds) {
@@ -19,15 +19,23 @@ export default function CountdownTimer({ expectedFinishAt, onExpire }) {
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
     calculateRemainingSeconds(expectedFinishAt)
   );
+  const hasExpiredRef = useRef(false);
 
   useEffect(() => {
-    setRemainingSeconds(calculateRemainingSeconds(expectedFinishAt));
+    const initialRemaining = calculateRemainingSeconds(expectedFinishAt);
+    setRemainingSeconds(initialRemaining);
+    hasExpiredRef.current = initialRemaining <= 0;
 
     const interval = setInterval(() => {
       const remaining = calculateRemainingSeconds(expectedFinishAt);
       setRemainingSeconds(remaining);
       if (remaining <= 0) {
-        if (onExpire) onExpire();
+        if (!hasExpiredRef.current) {
+          hasExpiredRef.current = true;
+          if (onExpire) onExpire();
+        }
+      } else {
+        hasExpiredRef.current = false;
       }
     }, 1000);
 

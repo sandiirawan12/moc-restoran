@@ -36,18 +36,18 @@ export default function AppDashboard() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
   // Fetch real-time status (tables & queue)
-  const fetchStatus = useCallback(async () => {
+  const fetchStatus = useCallback(async (isManual = false) => {
     try {
-      setIsRefreshing(true);
+      if (isManual) setIsRefreshing(true);
       const res = await fetch(`${API_BASE_URL}/api/status`);
       if (!res.ok) throw new Error('Gagal mengambil status restoran');
       const data = await res.json();
-      setTables(data.tables || []);
-      setQueue(data.queue || []);
+      setTables(Array.isArray(data.tables) ? data.tables : []);
+      setQueue(Array.isArray(data.queue) ? data.queue : []);
     } catch (err) {
       console.error(err);
     } finally {
-      setIsRefreshing(false);
+      if (isManual) setIsRefreshing(false);
     }
   }, [API_BASE_URL]);
 
@@ -76,19 +76,18 @@ export default function AppDashboard() {
     } catch (err) {
       console.error(err);
     }
-  }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage]);
+  }, [searchValue, statusFilter, partyFilter, sortBy, sortDir, historyPage, API_BASE_URL]);
 
-  // Initial load & 3s polling
+  // Initial load & 3s background polling (quiet, no spinner flickers)
   useEffect(() => {
-    fetchStatus();
-    fetchHistory();
+    fetchStatus(false);
 
     const interval = setInterval(() => {
-      fetchStatus();
+      fetchStatus(false);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [fetchStatus, fetchHistory]);
+  }, [fetchStatus]);
 
   // Re-fetch history whenever search/filter/sort changes
   useEffect(() => {
@@ -209,7 +208,7 @@ export default function AppDashboard() {
         onOpenArrivalModal={() => setIsArrivalModalOpen(true)}
         onOpenRevenueModal={() => setIsRevenueModalOpen(true)}
         onRefresh={() => {
-          fetchStatus();
+          fetchStatus(true);
           fetchHistory();
         }}
         isRefreshing={isRefreshing}
@@ -225,7 +224,7 @@ export default function AppDashboard() {
               onForceComplete={handleForceComplete}
               onDropQueueCustomer={handleDropQueueCustomer}
               onRefresh={() => {
-                fetchStatus();
+                fetchStatus(true);
                 fetchHistory();
               }}
             />
