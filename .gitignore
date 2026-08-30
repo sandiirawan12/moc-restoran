@@ -9,6 +9,7 @@
 /.phpunit.cache
 /auth.json
 /dist
+/.agents
 /node_modules
 /public/build
 /public/fonts-manifest.dev.json
